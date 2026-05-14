@@ -1,0 +1,132 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+}
+
+model User {
+  id                String           @id @default(dbgenerated("uuid_generate_v4()")) @db.Uuid
+  full_name         String           @db.VarChar(100)
+  email             String?          @unique @db.VarChar(150)
+  phone_number      String           @unique @db.VarChar(20)
+  role              String           @db.VarChar(20)
+  is_phone_verified Boolean?         @default(false)
+  createdAt         DateTime?        @default(now()) @map("created_at") @db.Timestamp(6)
+  updatedAt         DateTime?        @default(now()) @updatedAt @map("updated_at") @db.Timestamp(6)
+  password_hash     String?
+  notifications     notifications[]
+  search_history    search_history[]
+  shops             Shop[]
+
+  @@map("users")
+}
+
+model Category {
+  id        String    @id @default(dbgenerated("uuid_generate_v4()")) @db.Uuid
+  name      String    @unique @db.VarChar(100)
+  createdAt DateTime? @default(now()) @map("created_at") @db.Timestamp(6)
+  products  Product[]
+
+  @@map("categories")
+}
+
+model Shop {
+  id                  String                   @id @default(dbgenerated("uuid_generate_v4()")) @db.Uuid
+  ownerId             String                   @map("owner_id") @db.Uuid
+  shop_name           String                   @db.VarChar(150)
+  description         String?
+  phone_number        String                   @db.VarChar(20)
+  address             String
+  location            Unsupported("geography")
+  shop_image_url      String?
+  verification_status String?                  @default("pending") @db.VarChar(30)
+  isActive            Boolean?                 @default(true) @map("is_active")
+  createdAt           DateTime?                @default(now()) @map("created_at") @db.Timestamp(6)
+  updatedAt           DateTime?                @default(now()) @updatedAt @map("updated_at") @db.Timestamp(6)
+  products            Product[]
+  owner               User                     @relation(fields: [ownerId], references: [id], onDelete: Cascade, onUpdate: NoAction)
+
+  @@index([location], type: Gist)
+  @@map("shops")
+}
+
+model Product {
+  id             String           @id @default(dbgenerated("uuid_generate_v4()")) @db.Uuid
+  shopId         String           @map("shop_id") @db.Uuid
+  categoryId     String?          @map("category_id") @db.Uuid
+  product_name   String           @db.VarChar(200)
+  description    String?
+  actual_price   Decimal          @db.Decimal(10, 2)
+  offer_price    Decimal?         @db.Decimal(10, 2)
+  stock_quantity Int?             @default(0)
+  imageUrl       String?          @map("image_url")
+  isActive       Boolean?         @default(true) @map("is_active")
+  createdAt      DateTime?        @default(now()) @map("created_at") @db.Timestamp(6)
+  updatedAt      DateTime?        @default(now()) @updatedAt @map("updated_at") @db.Timestamp(6)
+  offers         Offer[]
+  product_images product_images[]
+  category       Category?        @relation(fields: [categoryId], references: [id], onDelete: NoAction, onUpdate: NoAction)
+  shop           Shop             @relation(fields: [shopId], references: [id], onDelete: Cascade, onUpdate: NoAction)
+
+  @@index([categoryId], map: "products_category_idx")
+  @@index([product_name], map: "products_name_idx")
+  @@index([shopId], map: "products_shop_idx")
+  @@map("products")
+}
+
+model Offer {
+  id                 String    @id @default(dbgenerated("uuid_generate_v4()")) @db.Uuid
+  productId          String    @map("product_id") @db.Uuid
+  title              String    @db.VarChar(200)
+  description        String?
+  discountPercentage Int?      @map("discount_percentage")
+  start_time         DateTime  @db.Timestamp(6)
+  end_time           DateTime  @db.Timestamp(6)
+  isActive           Boolean?  @default(true) @map("is_active")
+  createdAt          DateTime? @default(now()) @map("created_at") @db.Timestamp(6)
+  product            Product   @relation(fields: [productId], references: [id], onDelete: Cascade, onUpdate: NoAction)
+
+  @@index([isActive], map: "offers_active_idx")
+  @@map("offers")
+}
+
+/// This model contains row level security and requires additional setup for migrations. Visit https://pris.ly/d/row-level-security for more info.
+model notifications {
+  id         String    @id @default(dbgenerated("uuid_generate_v4()")) @db.Uuid
+  user_id    String    @db.Uuid
+  title      String    @db.VarChar(200)
+  message    String
+  is_read    Boolean?  @default(false)
+  created_at DateTime? @default(now()) @db.Timestamp(6)
+  users      User      @relation(fields: [user_id], references: [id], onDelete: Cascade, onUpdate: NoAction)
+}
+
+/// This model contains row level security and requires additional setup for migrations. Visit https://pris.ly/d/row-level-security for more info.
+model product_images {
+  id         String    @id @default(dbgenerated("uuid_generate_v4()")) @db.Uuid
+  product_id String    @db.Uuid
+  image_url  String
+  is_primary Boolean?  @default(false)
+  created_at DateTime? @default(now()) @db.Timestamp(6)
+  products   Product   @relation(fields: [product_id], references: [id], onDelete: Cascade, onUpdate: NoAction)
+}
+
+/// This model contains row level security and requires additional setup for migrations. Visit https://pris.ly/d/row-level-security for more info.
+model search_history {
+  id           String    @id @default(dbgenerated("uuid_generate_v4()")) @db.Uuid
+  user_id      String?   @db.Uuid
+  search_query String    @db.VarChar(255)
+  searched_at  DateTime? @default(now()) @db.Timestamp(6)
+  users        User?     @relation(fields: [user_id], references: [id], onDelete: Cascade, onUpdate: NoAction)
+}
+
+/// This table contains check constraints and requires additional setup for migrations. Visit https://pris.ly/d/check-constraints for more info.
+model spatial_ref_sys {
+  srid      Int     @id
+  auth_name String? @db.VarChar(256)
+  auth_srid Int?
+  srtext    String? @db.VarChar(2048)
+  proj4text String? @db.VarChar(2048)
+}
