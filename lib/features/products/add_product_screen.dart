@@ -257,15 +257,14 @@ class _AddProductScreenState extends ConsumerState<AddProductScreen> {
       'price': double.parse(_priceController.text.trim()),
       'description': _descriptionController.text.trim(),
       'stock': int.parse(_stockController.text.trim()),
-      'categoryId': 'uuid-of-category', // In a real app, this would be a real ID
     };
 
+    final existing = _existingProduct;
     final offerPriceText = _offerPriceController.text.trim();
-    if (offerPriceText.isNotEmpty) {
+    if (offerPriceText.isNotEmpty && existing != null) {
       productData['offerPrice'] = double.parse(offerPriceText);
     }
 
-    final existing = _existingProduct;
     final ApiResponse<Product> response;
 
     if (existing == null) {

@@ -19,14 +19,20 @@ class ApiResponse<T> {
     this.timestamp,
   });
 
-  factory ApiResponse.fromJson(Map<String, dynamic> json, T Function(dynamic) fromJsonT) {
+  factory ApiResponse.fromJson(
+      Map<String, dynamic> json, T Function(dynamic) fromJsonT) {
     String message = '';
     List<String>? messages;
 
     if (json['message'] is String) {
       message = json['message'];
     } else if (json['message'] is List) {
-      messages = List<String>.from(json['message']);
+      messages = (json['message'] as List).map((e) {
+        if (e is Map) {
+          return e.values.join(', ');
+        }
+        return e.toString();
+      }).toList();
       message = messages.isNotEmpty ? messages.first : '';
     }
 

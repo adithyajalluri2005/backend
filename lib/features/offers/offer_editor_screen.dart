@@ -9,6 +9,8 @@ import 'package:vendor_app/core/utils/formatters.dart';
 import 'package:vendor_app/features/offers/offer_provider.dart';
 import 'package:vendor_app/shared/components/page_container.dart';
 import 'package:vendor_app/shared/models/offer.dart';
+import 'package:vendor_app/features/products/product_provider.dart';
+import 'package:vendor_app/features/shops/shop_provider.dart';
 import 'package:vendor_app/shared/widgets/primary_button.dart';
 
 class OfferEditorScreen extends ConsumerStatefulWidget {
@@ -176,16 +178,40 @@ class _OfferEditorScreenState extends ConsumerState<OfferEditorScreen> {
       return;
     }
 
+    final shop = ref.read(shopProvider).shop;
+    if (shop == null) {
+      ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text('No shop profile found')));
+      return;
+    }
+
+    final products = ref.read(productCatalogProvider).items;
+    if (products.isEmpty) {
+      ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text('Please add a product first before creating an offer')));
+      return;
+    }
+
     setState(() => _isSaving = true);
     
     final existing = _existingOffer;
-    final offerData = {
+
+    final discountText = _discountController.text.trim();
+    final parsedVal = double.tryParse(discountText.replaceAll(RegExp(r'[^0-9.]'), ''));
+    
+    final offerData = <String, dynamic>{
+      'shopId': shop.id,
+      'productId': products.first.id,
       'title': _titleController.text.trim(),
-      'discount': _discountController.text.trim(),
-      'startDate': _startDate.toIso8601String(),
-      'endDate': _endDate.toIso8601String(),
-      'activeStatus': _isActive,
+      'startsAt': _startDate.toIso8601String(),
+      'endsAt': _endDate.toIso8601String(),
     };
+
+    if (parsedVal != null) {
+      if (discountText.contains('%')) {
+        offerData['discountPercentage'] = parsedVal;
+      } else {
+        offerData['offerPrice'] = parsedVal;
+      }
+    }
 
     final response = await ref.read(offerRepositoryProvider).createOffer(offerData);
 

@@ -47,10 +47,7 @@ class AuthRepository {
 
       return apiResponse;
     } on DioException catch (e) {
-      return ApiResponse.fromJson(
-        e.response?.data ?? {'success': false, 'message': 'Login failed'},
-        (data) => null as dynamic,
-      );
+      return _errorResponse(e, 'Login failed');
     }
   }
 
@@ -92,11 +89,21 @@ class AuthRepository {
 
       return apiResponse;
     } on DioException catch (e) {
-      return ApiResponse.fromJson(
-        e.response?.data ?? {'success': false, 'message': 'Registration failed'},
-        (data) => null as dynamic,
-      );
+      return _errorResponse(e, 'Registration failed');
     }
+  }
+
+  ApiResponse<User> _errorResponse(DioException e, String fallbackMessage) {
+    final data = e.response?.data;
+    if (data is Map<String, dynamic>) {
+      return ApiResponse.fromJson(data, (data) => null as dynamic);
+    }
+
+    return ApiResponse<User>(
+      success: false,
+      message: data?.toString() ?? fallbackMessage,
+      statusCode: e.response?.statusCode,
+    );
   }
 
   Future<void> logout() async {

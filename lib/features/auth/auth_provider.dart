@@ -54,7 +54,15 @@ class AuthNotifier extends StateNotifier<AuthState> {
   Future<void> login(String email, String password) async {
     state = state.copyWith(isLoading: true, error: null);
     final response = await _repository.login(email, password);
-    if (response.success) {
+    if (response.success && response.data != null) {
+      if (response.data!.role == 'USER') {
+        state = state.copyWith(
+          isLoading: false,
+          error: 'Customers cannot login here. Please use the User application.',
+        );
+        return;
+      }
+
       state = state.copyWith(
         isLoggedIn: true,
         user: response.data,

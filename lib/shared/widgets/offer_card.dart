@@ -68,7 +68,7 @@ class OfferCard extends StatelessWidget {
                   children: <Widget>[
                     Text(offer.title, style: AppTextStyles.title),
                     const SizedBox(height: AppSpacing.xs),
-                    Text(offer.discount, style: AppTextStyles.body.copyWith(color: AppColors.warning)),
+                    Text('${offer.discount}% off', style: AppTextStyles.body.copyWith(color: AppColors.warning)),
                     const SizedBox(height: AppSpacing.xs),
                     Text(
                       AppFormatters.range(offer.startDate, offer.endDate),

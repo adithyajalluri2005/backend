@@ -26,10 +26,10 @@ class SearchRepository {
       final response = await _apiClient.get(
         ApiEndpoints.productsNearby,
         queryParameters: {
-          'lat': lat,
-          'lng': lng,
-          if (radius != null) 'radius': radius,
-          if (query != null) 'query': query,
+          'latitude': lat,
+          'longitude': lng,
+          if (radius != null) 'radiusKm': radius,
+          if (query != null) 'q': query,
           if (categoryId != null) 'categoryId': categoryId,
         },
       );
@@ -53,12 +53,15 @@ class SearchRepository {
       final response = await _apiClient.get(ApiEndpoints.searchHistory);
       return ApiResponse<List<String>>.fromJson(
         response.data,
-        (data) => (data as List).map((e) => e as String).toList(),
+        (data) => (data as List)
+            .map((e) => e is String ? e : e['search_query'] as String)
+            .toList(),
       );
     } on DioException catch (e) {
       return ApiResponse(
         success: false,
-        message: e.response?.data['message'] ?? 'Failed to fetch search history',
+        message:
+            e.response?.data['message'] ?? 'Failed to fetch search history',
         error: e.response?.data['error'],
         statusCode: e.response?.statusCode,
       );
@@ -72,7 +75,8 @@ class SearchRepository {
     } on DioException catch (e) {
       return ApiResponse(
         success: false,
-        message: e.response?.data['message'] ?? 'Failed to clear search history',
+        message:
+            e.response?.data['message'] ?? 'Failed to clear search history',
         error: e.response?.data['error'],
         statusCode: e.response?.statusCode,
       );
